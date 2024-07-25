@@ -1,5 +1,3 @@
-# Trilha JS Developer - Pokedex
-
 # Bootcamp DIO <img src="https://avatars.githubusercontent.com/u/26231823?s=200&v=4" alt="Logo DIO" height=24> - Pokedex <img src="./assets//img/favicon64x64.png" height=24>
 
 
