@@ -1,4 +1,4 @@
-# Bootcamp DIO <img src="https://avatars.githubusercontent.com/u/26231823?s=200&v=4" alt="Logo DIO" height=30> - Pokedex <img src="./assets//img/favicon64x64.png" height=30>
+# Bootcamp DIO <img align="center" width="40px" src="https://hermes.digitalinnovation.one/assets/diome/logo-minimized.png"> - Pokedex <img src="./assets//img/favicon64x64.png" height=30>
 
 
 ### ⚙ About the project
