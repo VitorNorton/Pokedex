@@ -1,4 +1,4 @@
-# Bootcamp DIO <img align="center" width="40px" src="https://hermes.digitalinnovation.one/assets/diome/logo-minimized.png"> - Pokedex <img src="./assets//img/favicon64x64.png" height=30>
+# Bootcamp DIO <img align="center" width="40px" src="https://hermes.digitalinnovation.one/assets/diome/logo-minimized.png"> - Pokedex <img src="./assets//img/favicon64x64.png" height=50>
 
 
 ### ⚙ About the project
