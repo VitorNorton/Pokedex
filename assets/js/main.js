@@ -1,53 +1,71 @@
-const pokeApi = {}
+const pokeApi = {};
 let offset = 0;
-let limit = 10;
+const limit = 10;
+let allPokemons = [];
+let allPokemonNames = [];
+let activeFilter = null;
+let isLoading = false;
+let sortKey = 'id';
+let sortDir = 'asc';
+let searchQuery = '';
+let searchDebounce = null;
+let currentSearchId = 0;
+
+const types = [
+  "normal",
+  "grass",
+  "fire",
+  "water",
+  "electric",
+  "ice",
+  "ground",
+  "flying",
+  "poison",
+  "fighting",
+  "psychic",
+  "dark",
+  "rock",
+  "bug",
+  "ghost",
+  "steel",
+  "dragon",
+  "fairy",
+];
 
 pokeApi.getPokemonDetail = function (pokemon) {
-    return fetch(pokemon.url) // caminha por todos os pokemons, e retorna o fetch de cada um deles
-        .then(function (response) {
-            return response.json(); // transforma o fetch de cada pokemon em json
-        })
-}
+  return fetch(pokemon.url).then(function (response) {
+    return response.json();
+  });
+};
 
-pokeApi.getPokemons = function(offset, limit) { // criando o método getPokemons para pokeApi
-    console.log(`offset: ${offset} limit: ${limit}`)
-    const url = `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`;
-    return fetch(url)
-        .then(function (response) { // quando dar o fetch, retorna response
-            responseJson = response.json(); // transformando response em json para que possa ser manipulado
-            return responseJson;
-        }) // após isso retorna response em json para a próxima função
-        .then(function (jsonBody) {
-            return jsonBody.results; // retorna para a prox função apenas a parte dos resultados do jsonBody, que é o que interessa
-        })
-        .then(function (pokemons){
-            return pokemons.map(pokeApi.getPokemonDetail) // mapeia todos os fetchs de todos os pokemons, e retorna um json de cada um deles, dessa forma teremos todos os detalhes de todos os pokemons
-        }).then(function (detailRequests) {
-            return Promise.all(detailRequests); // promise.all recebe um array de promessas e retorna uma nova promessa resolvida
-        }).then(function (pokemonsDetails) {
-            return pokemonsDetails;
-        })
-        .catch(function (error) {
-            console.log(error)
-        })
-        .finally(function () {
-            console.log('Requisição concluida!');
-        })
-}
+pokeApi.getPokemons = function (offset, limit) {
+  const url = `https://pokeapi.co/api/v2/pokemon?offset=${offset}&limit=${limit}`;
+  return fetch(url)
+    .then((res) => res.json())
+    .then((jsonBody) => jsonBody.results)
+    .then((pokemons) => pokemons.map(pokeApi.getPokemonDetail))
+    .then((requests) => Promise.all(requests))
+    .catch((err) => console.error(err));
+};
 
+function allTheTypes(pokemonTypes) {
+  return pokemonTypes.map(function (type) {
+    return `<span class="type ${type.type.name}">${type.type.name}</span>`;
+  });
+}
 
 function convertendoJsonPokemonToHtml(pokemon) {
-    return `
+  return `
         <li class="${pokemon.types[0].type.name}">
-            <a class="no-link-style" onclick="pokemonSpecified(${pokemon.id});">
+            <a class="no-link-style" onclick="goToPokemon(${pokemon.id});">
                 <span class="number">#${pokemon.id}</span>
                 <span class="name">${pokemon.name}</span>
                 <div class="details">
                     <div class="poke-types">
-                        ${allTheTypes(pokemon.types).join('')}
+                        ${allTheTypes(pokemon.types).join("")}
                     </div>
                     <div class="pokemon-img">
-                        <img src="${pokemon.sprites.other.dream_world.front_default}" alt="${pokemon.name}">
+                        <img src="assets/img/pokemons/poke_${pokemon.id}.gif" alt="${pokemon.name}" onerror="this.src='${pokemon.sprites.other.dream_world.front_default}'">
                     </div>
                 </div>
                 <div class="pokeball-img">
@@ -55,75 +73,170 @@ function convertendoJsonPokemonToHtml(pokemon) {
                 </div>
             </a>
         </li>
-    `
+    `;
 }
 
-function allTheTypes(pokemonTypes) {
-    return pokemonTypes.map(function (type){
-        return `
-            <span class="type ${type.type.name}">${type.type.name}</span>
-        `
-        })
+async function renderPokemons() {
+  if (searchQuery) {
+    const myId = ++currentSearchId;
+    const matches = allPokemonNames
+      .filter((p) => p.name.includes(searchQuery))
+      .slice(0, 30);
+    const pokemons = await Promise.all(matches.map(pokeApi.getPokemonDetail));
+    if (myId !== currentSearchId) return;
+    const toShow = activeFilter
+      ? pokemons.filter((p) => p.types.some((t) => t.type.name === activeFilter))
+      : pokemons;
+    listaPokemonOl.innerHTML = toShow.map(convertendoJsonPokemonToHtml).join("");
+    return;
+  }
+  currentSearchId++;
+  let toShow = activeFilter
+    ? allPokemons.filter((p) => p.types.some((t) => t.type.name === activeFilter))
+    : allPokemons;
+  listaPokemonOl.innerHTML = toShow.map(convertendoJsonPokemonToHtml).join("");
 }
 
-const listaPokemonOl = document.getElementById('listaPokemons');
+const listaPokemonOl = document.getElementById("listaPokemons");
 
-pokeApi.getPokemons(offset, limit)
-    .then(function (pokemons = [] ) { // apenas para caso não retorne nada, estarei deixando uma lista criada por padrão
-        const newList = pokemons.map(function (pokemon){ // método map substitui um for, é usado para percorrer toda lista
-                return convertendoJsonPokemonToHtml(pokemon);
-            })
-        const newHtml = newList.join('') // pega a lista newList, onde estão a lista de todos os elementos htmls com todos os pokemons, e junta nesta lista newHtml
-        listaPokemonOl.innerHTML = newHtml // joga no html da listaPokemonOl
-    })
- 
-function loadMoreButton(offset, limit) {
-    pokeApi.getPokemons(offset, limit).then(function (pokemons = []){
-        const newHtml = pokemons.map(function (pokemon) { 
-            return `
-            <li class="${pokemon.types[0].type.name}">
-                <a class="no-link-style" onclick="pokemonSpecified(${pokemon.id});">
-                    <span class="number">#${pokemon.id}</span>
-                    <span class="name">${pokemon.name}</span>
-                    <div class="details">
-                        <div class="poke-types">
-                            ${allTheTypes(pokemon.types).join('')}
-                        </div>
-                        <div class="pokemon-img">
-                            <img src="${pokemon.sprites.other.dream_world.front_default}" alt="${pokemon.name}">
-                        </div>
-                    </div>
-                    <div class="pokeball-img">
-                        <img src="assets/img/poke_ball_icon.png" alt="Pokeball background image">
-                    </div>
-                </a>
-            </li> `
-        }).join('');
-        listaPokemonOl.innerHTML += newHtml
-    })
-}
+fetch('https://pokeapi.co/api/v2/pokemon?limit=1025&offset=0')
+  .then((res) => res.json())
+  .then((data) => { allPokemonNames = data.results; });
+
+pokeApi.getPokemons(offset, limit).then(function (pokemons) {
+  allPokemons = pokemons;
+  renderPokemons();
+});
 
 let scrollTimeout;
-
-window.onscroll = function() {
-    clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(function() {
-        if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight) {
-            console.log("you're at the bottom of the page");
-            offset += 10;
-            limit = limit + 10
-            loadMoreButton(offset, limit);  
-        }
-    }, 800);
+window.onscroll = function () {
+  if (activeFilter || searchQuery) return;
+  clearTimeout(scrollTimeout);
+  scrollTimeout = setTimeout(function () {
+    if (
+      window.innerHeight + window.pageYOffset >=
+      document.body.offsetHeight - 10
+    ) {
+      if (isLoading) return;
+      isLoading = true;
+      offset += limit;
+      pokeApi.getPokemons(offset, limit).then(function (newPokemons) {
+        allPokemons = [...allPokemons, ...newPokemons];
+        renderPokemons();
+        isLoading = false;
+      });
+    }
+  }, 600);
 };
 
-function pokemonSpecified(pokemon) {
-    const url = `https://pokeapi.co/api/v2/pokemon/${pokemon}`
-    fetch(url)
-        .then(function (response) { // quando dar o fetch, retorna response
-            responseJson = response.json(); // transformando response em json para que possa ser manipulado
-            return responseJson;
-        }).then(function (pokemon) {
-            window.location.href = `pokemon.html?url=${url}`
-        })
+function goToPokemon(id) {
+  window.location.href = `pokemon.html?url=https://pokeapi.co/api/v2/pokemon/${id}`;
+}
+
+function sortBy(key) {
+  if (sortKey === key) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey = key;
+    sortDir = 'asc';
+  }
+  if (sortKey === 'name') {
+    allPokemons.sort((a, b) =>
+      sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+    );
+  } else {
+    allPokemons.sort((a, b) =>
+      sortDir === 'asc' ? a.id - b.id : b.id - a.id
+    );
+  }
+  updateSortIcons();
+  renderPokemons();
+  closeMenu();
+}
+
+function updateSortIcons() {
+  const idIcon = document.getElementById('sortByIdIcon');
+  const nameIcon = document.getElementById('sortByNameIcon');
+  if (sortKey === 'id') {
+    idIcon.className = sortDir === 'asc' ? 'fa-solid fa-arrow-up-1-9' : 'fa-solid fa-arrow-down-9-1';
+    nameIcon.className = 'fa-solid fa-arrow-down-a-z';
+  } else {
+    nameIcon.className = sortDir === 'asc' ? 'fa-solid fa-arrow-down-a-z' : 'fa-solid fa-arrow-up-z-a';
+    idIcon.className = 'fa-solid fa-arrow-up-1-9';
+  }
+}
+
+// --- Filter panel ---
+const fabFilter = document.getElementById("fabFilter");
+const filterPanel = document.getElementById("filterPanel");
+const filterOverlay = document.getElementById("filterOverlay");
+const filterTypesEl = document.getElementById("filterTypes");
+
+filterTypesEl.innerHTML = types
+  .map(
+    (type) =>
+      `<button class="type-filter-btn ${type}" data-type="${type}" onclick="filterByType('${type}')">${type}</button>`,
+  )
+  .join("");
+
+function filterByType(type) {
+  if (activeFilter === type) {
+    activeFilter = null;
+  } else {
+    activeFilter = type;
+  }
+  document.querySelectorAll(".type-filter-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.type === activeFilter);
+  });
+  fabFilter.classList.toggle("filter-active", activeFilter !== null);
+  renderPokemons();
+  closeFilter();
+}
+
+document.getElementById("clearFilter").addEventListener("click", function () {
+  activeFilter = null;
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  document.querySelectorAll(".type-filter-btn").forEach((btn) => btn.classList.remove("active"));
+  fabFilter.classList.remove("filter-active");
+  renderPokemons();
+  closeFilter();
+});
+
+document.getElementById('searchInput').addEventListener('input', function () {
+  searchQuery = this.value.toLowerCase().trim();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(renderPokemons, 300);
+});
+
+fabFilter.addEventListener("click", function () {
+  filterPanel.classList.toggle("open");
+  filterOverlay.classList.toggle("open");
+  closeMenu();
+});
+
+filterOverlay.addEventListener("click", closeFilter);
+
+function closeFilter() {
+  filterPanel.classList.remove("open");
+  filterOverlay.classList.remove("open");
+}
+
+// --- Hamburger menu ---
+const menuBtn = document.getElementById("menuBtn");
+const menuDrawer = document.getElementById("menuDrawer");
+
+menuBtn.addEventListener("click", function () {
+  menuDrawer.classList.toggle("open");
+  closeFilter();
+});
+
+document.addEventListener("click", function (e) {
+  if (!menuBtn.contains(e.target) && !menuDrawer.contains(e.target)) {
+    closeMenu();
+  }
+});
+
+function closeMenu() {
+  menuDrawer.classList.remove("open");
 }

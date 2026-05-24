@@ -1,125 +1,198 @@
+.sectionPokemon {
+  position: relative;
+}
 header {
-    display: flex;
-    justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  z-index: 5;
 }
 header i {
-    margin: 20px;
-    color: white;
-    font-size: 25px;
-    justify-content: space-between;
+  margin: 20px;
+  color: white;
+  font-size: 25px;
+  justify-content: space-between;
 }
 h1 {
-    font-size: 2rem;
+  font-size: 2rem;
 }
 .col {
-    display: flex;
-    justify-content: space-between;
-    padding-right: 50px;
+  display: flex;
+  justify-content: space-between;
+  padding-right: 50px;
+  position: relative;
+  z-index: 3;
 }
 .top-side {
-    color: white;
-    margin: 0 20px 0;
-    height: 100%;
-    width: 100%;
-    position: relative;
-
+  color: white;
+  margin: 0 20px 0;
+  min-height: 310px;
+  width: 100%;
+  position: relative;
 }
 .top-side .pokemon-name {
-    font-size: 2rem;    
-    margin: 1rem 0;
-    text-transform: capitalize;
+  font-size: 2rem;
+  margin: 1rem 0;
+  text-transform: capitalize;
 }
 .poke-types span {
-    font-size: 16px!important;
-    margin: 0.5rem;
-    padding: 3px 12px;
+  font-size: 16px !important;
+  margin: 0.5rem;
+  padding: 3px 12px;
 }
 .right-side {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
 }
 .right-side .number {
-    font-size: 1.2rem;
-    font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 .poke-container {
-    text-align: center;
-    height: 250px;
-    display: flex;
-    position: relative;
-    left: -20px;
-    justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: -60px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 2;
+  pointer-events: none;
 }
 .poke-img {
-    position: relative;
-    width: 100%;
-    max-width: 300px;
-    top: 20px;
-    z-index: 2;
+  height: 380px;
+  width: auto;
+  max-width: 100%;
+  z-index: 1;
 }
 .pokeball-img {
-    position: absolute;
-    filter: grayscale(100%) brightness(1000%);
-    top: 80px;
-    right: -80px;
-    opacity: 0.5;
-    height: 300px;
-    z-index: 1;
+  position: absolute;
+  filter: grayscale(100%) brightness(1000%);
+  top: 80px;
+  right: -80px;
+  opacity: 0.5;
+  height: 300px;
+  z-index: 1;
 }
 .bot-side {
-    background-color: #fff;
-    border-radius: 20px 20px 0 0;
+  background-color: #fff;
+  border-radius: 20px 20px 0 0;
+  position: relative;
+  isolation: isolate;
+}
+.bot-side::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  bottom: -20px;
+  width: 260px;
+  height: 260px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.12;
+  z-index: -1;
+  pointer-events: none;
+}
+.type-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: bold;
+  text-transform: capitalize;
+  filter: brightness(1.1);
+  margin-right: 6px;
 }
 .bot-side .about {
-    padding-top: 1.5rem;
-    margin: 0 1.5rem;
-    display: flex;
-    font-size: 1.2rem;
-    font-weight: bold;
-    padding-bottom: .5rem;
+  padding-top: 1.5rem;
+  margin: 0 1.5rem;
+  display: flex;
+  font-size: 1.2rem;
+  font-weight: bold;
+  padding-bottom: 0.5rem;
 }
 table {
-    margin: 0 1rem;
+  margin: 0 1rem;
 }
 td {
-    padding: .5rem .5rem; /* Espaçamento interno das células */
-    font-weight: 500;
+  padding: 0.5rem 0.5rem; /* Espaçamento interno das células */
+  font-weight: 500;
 }
 .first-table {
-    margin: 0 1rem 1rem;
+  margin: 0 1rem 1rem;
 }
 .breeding {
-    margin: 0 1.5rem;
-    font-size: 1.2rem;
-    font-weight: bold;
+  margin: 0 1.5rem;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 .bar {
-    width: 200px;
-    background-color: #afafaf63;
-    height: 5px;
-    border-radius: 5px;
+  width: 200px;
+  background-color: #afafaf63;
+  height: 5px;
+  border-radius: 5px;
 }
 .bar-stat {
-    height: 5px;
-    width: 80px;
-    border-radius: 5px;
+  height: 5px;
+  width: 80px;
+  border-radius: 5px;
 }
 .red {
-    background-color: red;
+  background-color: red;
 }
 .green {
-    background-color: rgb(0, 192, 0);
+  background-color: rgb(0, 192, 0);
 }
 .info {
-    color: rgba(0, 0, 0, 0.7);
+  color: rgba(0, 0, 0, 0.7);
 }
 .second-table {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 .capitalize {
-    text-transform: capitalize;
+  text-transform: capitalize;
 }
 .poke-name {
-    margin-bottom: .9rem;
+  margin-bottom: 0.9rem;
+  position: relative;
+  z-index: 3;
+}
+.evo-chain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  padding: 0.5rem 0.5rem 1.5rem;
+}
+.evo-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.evo-img {
+  width: 100px;
+  height: 150px;
+  object-fit: contain;
+}
+.evo-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+}
+.evo-arrow {
+  font-size: 1.4rem;
+  color: rgba(0, 0, 0, 0.35);
+  margin: 0 0.4rem;
+  padding-bottom: 1.2rem;
+}
+.no-evo {
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+  padding: 0.5rem 0;
 }
