@@ -22,6 +22,39 @@
   </head>
   <body>
     <div id="pokemonSpecified"></div>
+
+    <div class="move-modal-overlay" id="moveModalOverlay" onclick="closeMoveModal()">
+      <div class="move-modal" onclick="event.stopPropagation()">
+        <div class="move-modal-header">
+          <div class="move-modal-title">
+            <span class="move-modal-name capitalize" id="moveModalName"></span>
+            <span id="moveModalType"></span>
+          </div>
+          <button class="move-modal-close" onclick="closeMoveModal()">✕</button>
+        </div>
+        <div class="move-modal-stats" id="moveModalStats">
+          <div class="move-stat-item">
+            <span class="move-stat-label">Poder</span>
+            <span class="move-stat-value" id="moveModalPower"></span>
+          </div>
+          <div class="move-stat-item">
+            <span class="move-stat-label">Precisão</span>
+            <span class="move-stat-value" id="moveModalAccuracy"></span>
+          </div>
+          <div class="move-stat-item">
+            <span class="move-stat-label">PP</span>
+            <span class="move-stat-value" id="moveModalPP"></span>
+          </div>
+          <div class="move-stat-item">
+            <span class="move-stat-label">Categoria</span>
+            <span class="move-stat-value capitalize" id="moveModalClass"></span>
+          </div>
+        </div>
+        <div class="move-modal-loading" id="moveModalLoading">Carregando...</div>
+        <p class="move-modal-effect" id="moveModalEffect"></p>
+      </div>
+    </div>
+
     <script src="assets/js/pokemon.js"></script>
     <script
       src="https://kit.fontawesome.com/904e76c853.js"

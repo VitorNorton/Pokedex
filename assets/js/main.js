@@ -11,31 +11,24 @@ let searchQuery = '';
 let searchDebounce = null;
 let currentSearchId = 0;
 
+// type filter pagination
+const typeCache = {};
+let filteredList = [];
+let filteredOffset = 0;
+let filteredLoading = false;
+
+// sort pagination
+let sortedList = null;
+let sortedListOffset = 0;
+
 const types = [
-  "normal",
-  "grass",
-  "fire",
-  "water",
-  "electric",
-  "ice",
-  "ground",
-  "flying",
-  "poison",
-  "fighting",
-  "psychic",
-  "dark",
-  "rock",
-  "bug",
-  "ghost",
-  "steel",
-  "dragon",
-  "fairy",
+  "normal", "grass", "fire", "water", "electric", "ice", "ground",
+  "flying", "poison", "fighting", "psychic", "dark", "rock", "bug",
+  "ghost", "steel", "dragon", "fairy",
 ];
 
 pokeApi.getPokemonDetail = function (pokemon) {
-  return fetch(pokemon.url).then(function (response) {
-    return response.json();
-  });
+  return fetch(pokemon.url).then((response) => response.json());
 };
 
 pokeApi.getPokemons = function (offset, limit) {
@@ -47,6 +40,69 @@ pokeApi.getPokemons = function (offset, limit) {
     .then((requests) => Promise.all(requests))
     .catch((err) => console.error(err));
 };
+
+async function getPokemonByType(type) {
+  if (!typeCache[type]) {
+    const res = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+    const data = await res.json();
+    typeCache[type] = data.pokemon
+      .map((p) => ({ name: p.pokemon.name, url: p.pokemon.url }))
+      .filter((p) => {
+        const id = parseInt(p.url.split('/').filter(Boolean).pop());
+        return id >= 1 && id <= 1025;
+      })
+      .sort((a, b) => {
+        const idA = parseInt(a.url.split('/').filter(Boolean).pop());
+        const idB = parseInt(b.url.split('/').filter(Boolean).pop());
+        return idA - idB;
+      });
+  }
+  return typeCache[type];
+}
+
+function applySort(list) {
+  if (sortKey === 'name') {
+    list.sort((a, b) =>
+      sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+    );
+  } else {
+    list.sort((a, b) => {
+      const idA = parseInt(a.url.split('/').filter(Boolean).pop());
+      const idB = parseInt(b.url.split('/').filter(Boolean).pop());
+      return sortDir === 'asc' ? idA - idB : idB - idA;
+    });
+  }
+}
+
+async function loadFilteredBatch(replace) {
+  if (filteredLoading) return;
+  filteredLoading = true;
+  const batch = filteredList.slice(filteredOffset, filteredOffset + 20);
+  if (batch.length === 0) { filteredLoading = false; return; }
+  const pokemons = await Promise.all(batch.map(pokeApi.getPokemonDetail));
+  if (replace) {
+    listaPokemonOl.innerHTML = pokemons.map(convertendoJsonPokemonToHtml).join('');
+  } else {
+    listaPokemonOl.innerHTML += pokemons.map(convertendoJsonPokemonToHtml).join('');
+  }
+  filteredOffset += 20;
+  filteredLoading = false;
+}
+
+async function loadSortedBatch(replace) {
+  if (isLoading) return;
+  isLoading = true;
+  const batch = sortedList.slice(sortedListOffset, sortedListOffset + limit);
+  if (batch.length === 0) { isLoading = false; return; }
+  const pokemons = await Promise.all(batch.map(pokeApi.getPokemonDetail));
+  if (replace) {
+    listaPokemonOl.innerHTML = pokemons.map(convertendoJsonPokemonToHtml).join('');
+  } else {
+    listaPokemonOl.innerHTML += pokemons.map(convertendoJsonPokemonToHtml).join('');
+  }
+  sortedListOffset += limit;
+  isLoading = false;
+}
 
 function allTheTypes(pokemonTypes) {
   return pokemonTypes.map(function (type) {
@@ -77,6 +133,17 @@ function convertendoJsonPokemonToHtml(pokemon) {
 }
 
 async function renderPokemons() {
+  if (activeFilter) {
+    filteredList = await getPokemonByType(activeFilter);
+    if (searchQuery) {
+      filteredList = filteredList.filter((p) => p.name.includes(searchQuery));
+    }
+    applySort(filteredList);
+    filteredOffset = 0;
+    await loadFilteredBatch(true);
+    return;
+  }
+
   if (searchQuery) {
     const myId = ++currentSearchId;
     const matches = allPokemonNames
@@ -84,17 +151,18 @@ async function renderPokemons() {
       .slice(0, 30);
     const pokemons = await Promise.all(matches.map(pokeApi.getPokemonDetail));
     if (myId !== currentSearchId) return;
-    const toShow = activeFilter
-      ? pokemons.filter((p) => p.types.some((t) => t.type.name === activeFilter))
-      : pokemons;
-    listaPokemonOl.innerHTML = toShow.map(convertendoJsonPokemonToHtml).join("");
+    listaPokemonOl.innerHTML = pokemons.map(convertendoJsonPokemonToHtml).join('');
     return;
   }
+
+  if (sortedList) {
+    sortedListOffset = 0;
+    await loadSortedBatch(true);
+    return;
+  }
+
   currentSearchId++;
-  let toShow = activeFilter
-    ? allPokemons.filter((p) => p.types.some((t) => t.type.name === activeFilter))
-    : allPokemons;
-  listaPokemonOl.innerHTML = toShow.map(convertendoJsonPokemonToHtml).join("");
+  listaPokemonOl.innerHTML = allPokemons.map(convertendoJsonPokemonToHtml).join('');
 }
 
 const listaPokemonOl = document.getElementById("listaPokemons");
@@ -110,19 +178,24 @@ pokeApi.getPokemons(offset, limit).then(function (pokemons) {
 
 let scrollTimeout;
 window.onscroll = function () {
-  if (activeFilter || searchQuery) return;
+  if (searchQuery && !activeFilter) return;
   clearTimeout(scrollTimeout);
   scrollTimeout = setTimeout(function () {
-    if (
-      window.innerHeight + window.pageYOffset >=
-      document.body.offsetHeight - 10
-    ) {
+    if (window.innerHeight + window.pageYOffset >= document.body.offsetHeight - 10) {
+      if (activeFilter) {
+        loadFilteredBatch(false);
+        return;
+      }
+      if (sortedList) {
+        loadSortedBatch(false);
+        return;
+      }
       if (isLoading) return;
       isLoading = true;
       offset += limit;
       pokeApi.getPokemons(offset, limit).then(function (newPokemons) {
         allPokemons = [...allPokemons, ...newPokemons];
-        renderPokemons();
+        listaPokemonOl.innerHTML = allPokemons.map(convertendoJsonPokemonToHtml).join('');
         isLoading = false;
       });
     }
@@ -140,17 +213,19 @@ function sortBy(key) {
     sortKey = key;
     sortDir = 'asc';
   }
-  if (sortKey === 'name') {
-    allPokemons.sort((a, b) =>
-      sortDir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-    );
-  } else {
-    allPokemons.sort((a, b) =>
-      sortDir === 'asc' ? a.id - b.id : b.id - a.id
-    );
-  }
   updateSortIcons();
-  renderPokemons();
+
+  if (activeFilter) {
+    // re-sort already fetched filtered list
+    applySort(filteredList);
+    filteredOffset = 0;
+    loadFilteredBatch(true);
+  } else if (allPokemonNames.length > 0) {
+    sortedList = [...allPokemonNames];
+    applySort(sortedList);
+    sortedListOffset = 0;
+    loadSortedBatch(true);
+  }
   closeMenu();
 }
 
